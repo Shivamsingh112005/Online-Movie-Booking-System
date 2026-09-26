@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CINEVERSE — Select Seats</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="bg-orb bg-orb-1" style="opacity:0.1;"></div>
+  <canvas id="particles-canvas"></canvas>
+  <div id="page-transition" class="page-transition"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-logo" onclick="event.preventDefault();navigateTo('index.html')">CINEVERSE</a>
+    <div class="nav-actions">
+      <button class="icon-btn" id="theme-toggle">☀️</button>
+      <button class="icon-btn" onclick="history.back()" title="Back">←</button>
+    </div>
+  </nav>
+
+  <!-- Booking Layout -->
+  <div class="booking-layout" id="booking-layout">
+
+    <!-- Left: Seat Map -->
+    <div>
+      <!-- Movie Info Strip -->
+      <div class="glass-card" style="padding:1.25rem;margin-bottom:2rem;display:flex;gap:1rem;align-items:center;">
+        <img id="strip-poster" src="" alt="" style="width:50px;border-radius:6px;">
+        <div>
+          <div id="strip-title" style="font-weight:700;font-size:1.1rem;"></div>
+          <div id="strip-info" style="font-size:0.8rem;color:var(--text-muted);"></div>
+        </div>
+      </div>
+
+      <!-- Screen -->
+      <div class="screen-container">
+        <div class="screen"></div>
+        <div class="screen-label">S C R E E N</div>
+      </div>
+
+      <!-- Category Labels -->
+      <div id="category-labels" style="display:flex;flex-direction:column;gap:1.5rem;align-items:center;">
+        <!-- Seat map renders here -->
+      </div>
+
+      <!-- Seat Map -->
+      <div class="seat-map" id="seat-map"></div>
+
+      <!-- Legend -->
+      <div class="seat-legend">
+        <div class="legend-item"><div class="legend-dot available"></div> Available</div>
+        <div class="legend-item"><div class="legend-dot selected"></div> Selected</div>
+        <div class="legend-item"><div class="legend-dot booked"></div> Booked</div>
+        <div class="legend-item"><div class="legend-dot premium"></div> Premium</div>
+      </div>
+    </div>
+
+    <!-- Right: Summary -->
+    <div class="booking-summary">
+      <h2 class="summary-title">BOOKING SUMMARY</h2>
+
+      <div class="summary-movie" id="summary-movie"></div>
+
+      <div class="summary-row">
+        <span style="color:var(--text-muted);font-size:0.85rem;">Selected Seats</span>
+      </div>
+      <div class="selected-seats-display" id="selected-seats-display" style="margin-bottom:1rem;">
+        <span style="color:var(--text-muted);font-size:0.8rem;">No seats selected</span>
+      </div>
+
+      <div class="summary-row">
+        <span style="color:var(--text-muted);">Tickets</span>
+        <span class="summary-value" id="ticket-count">0 × ₹0</span>
+      </div>
+      <div class="summary-row">
+        <span style="color:var(--text-muted);">Convenience Fee</span>
+        <span class="summary-value" id="conv-fee">₹0</span>
+      </div>
+      <div class="summary-row">
+        <span style="color:var(--text-muted);">Taxes</span>
+        <span class="summary-value" id="tax-amount">₹0</span>
+      </div>
+      <div class="summary-row total">
+        <span>Total Amount</span>
+        <span class="summary-total" id="total-amount">₹0</span>
+      </div>
+
+      <button class="btn btn-gold" style="width:100%;margin-top:1.5rem;padding:1rem;font-size:1rem;" id="proceed-btn">
+        Proceed to Payment →
+      </button>
+
+      <p style="text-align:center;font-size:0.75rem;color:var(--text-muted);margin-top:1rem;">
+        🔒 Secure booking · Instant confirmation
+      </p>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    const movieId = parseInt(localStorage.getItem('selectedMovie')) || 1;
+    const movie = MOVIES.find(m => m.id === movieId) || MOVIES[0];
+    const showtime = JSON.parse(localStorage.getItem('selectedShowtime') || 'null') || movie.showtimes[0];
+
+    // Populate strip & summary
+    document.getElementById('strip-poster').src = movie.poster;
+    document.getElementById('strip-title').textContent = movie.title;
+    document.getElementById('strip-info').textContent = `${showtime.time} · ${showtime.type} · Today`;
+
+    document.getElementById('summary-movie').innerHTML = `
+      <img src="${movie.poster}" alt="${movie.title}">
+      <div class="summary-movie-info">
+        <div class="movie-title">${movie.title}</div>
+        <div class="movie-meta">${showtime.time} · ${showtime.type}</div>
+        <div class="movie-meta">Today · Cineverse Multiplex</div>
+      </div>
+    `;
+
+    // Generate seat map
+    const rows = ['A','B','C','D','E','F','G','H'];
+    const seatsPerRow = 12;
+    const premiumRows = ['A','B'];
+
+    // Randomly pre-book some seats
+    const booked = new Set();
+    rows.forEach(row => {
+      for (let s = 1; s <= seatsPerRow; s++) {
+        if (Math.random() < 0.25) booked.add(`${row}${s}`);
+      }
+    });
+
+    let selectedSeats = [];
+    const seatMap = document.getElementById('seat-map');
+
+    rows.forEach(row => {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'seat-row';
+
+      // Add category divider label before Premium
+      if (row === 'A') {
+        const label = document.createElement('div');
+        label.style.cssText = 'width:100%;text-align:center;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:0.5rem;font-weight:700;';
+        label.textContent = '— PREMIUM —';
+        seatMap.appendChild(label);
+      }
+      if (row === 'C') {
+        const label = document.createElement('div');
+        label.style.cssText = 'width:100%;text-align:center;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem;';
+        label.textContent = '— STANDARD —';
+        seatMap.appendChild(label);
+      }
+
+      const rowLabel = document.createElement('div');
+      rowLabel.className = 'seat-row-label';
+      rowLabel.textContent = row;
+      rowEl.appendChild(rowLabel);
+
+      for (let s = 1; s <= seatsPerRow; s++) {
+        // Gap in middle
+        if (s === 7) {
+          const gap = document.createElement('div');
+          gap.style.width = '20px';
+          rowEl.appendChild(gap);
+        }
+
+        const seatId = `${row}${s}`;
+        const seat = document.createElement('div');
+        const isPremium = premiumRows.includes(row);
+        const isBooked = booked.has(seatId);
+
+        seat.className = `seat ${isBooked ? 'booked' : (isPremium ? 'premium available' : 'available')}`;
+        seat.dataset.id = seatId;
+        seat.dataset.premium = isPremium;
+        seat.title = seatId;
+
+        if (!isBooked) {
+          seat.addEventListener('click', () => toggleSeat(seat, seatId, isPremium));
+        }
+
+        rowEl.appendChild(seat);
+      }
+
+      seatMap.appendChild(rowEl);
+    });
+
+    function toggleSeat(seatEl, id, isPremium) {
+      if (selectedSeats.includes(id)) {
+        selectedSeats = selectedSeats.filter(s => s !== id);
+        seatEl.classList.remove('selected');
+        seatEl.classList.add(isPremium ? 'premium available' : 'available');
+      } else {
+        if (selectedSeats.length >= 8) {
+          showToast('Maximum 8 seats per booking', 'error');
+          return;
+        }
+        selectedSeats.push(id);
+        seatEl.classList.remove('available', 'premium');
+        seatEl.classList.add('selected');
+      }
+      updateSummary();
+    }
+
+    function updateSummary() {
+      const display = document.getElementById('selected-seats-display');
+
+      if (selectedSeats.length === 0) {
+        display.innerHTML = '<span style="color:var(--text-muted);font-size:0.8rem;">No seats selected</span>';
+        document.getElementById('ticket-count').textContent = '0 × ₹0';
+        document.getElementById('conv-fee').textContent = '₹0';
+        document.getElementById('tax-amount').textContent = '₹0';
+        document.getElementById('total-amount').textContent = '₹0';
+        return;
+      }
+
+      display.innerHTML = selectedSeats.map(s => `<span class="seat-tag">${s}</span>`).join('');
+
+      const premiumCount = selectedSeats.filter(s => premiumRows.includes(s[0])).length;
+      const standardCount = selectedSeats.length - premiumCount;
+
+      const subtotal = (premiumCount * movie.price.premium) + (standardCount * movie.price.standard);
+      const convFee = Math.round(subtotal * 0.05);
+      const tax = Math.round(subtotal * 0.18);
+      const total = subtotal + convFee + tax;
+
+      document.getElementById('ticket-count').textContent =
+        `${selectedSeats.length} × ₹${Math.round(subtotal / selectedSeats.length)} = ₹${subtotal}`;
+      document.getElementById('conv-fee').textContent = `₹${convFee}`;
+      document.getElementById('tax-amount').textContent = `₹${tax}`;
+      document.getElementById('total-amount').textContent = `₹${total}`;
+    }
+
+    // Proceed
+    document.getElementById('proceed-btn').addEventListener('click', () => {
+      if (selectedSeats.length === 0) {
+        showToast('Please select at least one seat', 'error');
+        return;
+      }
+
+      const premiumCount = selectedSeats.filter(s => premiumRows.includes(s[0])).length;
+      const standardCount = selectedSeats.length - premiumCount;
+      const subtotal = (premiumCount * movie.price.premium) + (standardCount * movie.price.standard);
+      const convFee = Math.round(subtotal * 0.05);
+      const tax = Math.round(subtotal * 0.18);
+      const total = subtotal + convFee + tax;
+
+      localStorage.setItem('bookingData', JSON.stringify({
+        movieId: movie.id,
+        seats: selectedSeats,
+        showtime,
+        subtotal,
+        convFee,
+        tax,
+        total
+      }));
+
+      navigateTo('payment.html');
+    });
+  </script>
+</body>
+</html>

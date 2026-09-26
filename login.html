@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CINEVERSE — Login</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+</head>
+<body>
+  <!-- Background -->
+  <div class="bg-gradient"></div>
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- Cinematic Film Strip Decorations -->
+  <div class="film-strip film-strip-left" aria-hidden="true"></div>
+  <div class="film-strip film-strip-right" aria-hidden="true"></div>
+
+  <!-- Page Transition -->
+  <div id="page-transition" class="page-transition"></div>
+
+  <!-- Loading -->
+  <div class="loading-screen">
+    <div class="loading-logo">CINEVERSE</div>
+    <div class="loading-bar"><div class="loading-progress"></div></div>
+  </div>
+
+  <main class="auth-page">
+    <div class="auth-card float-anim" role="main">
+
+      <!-- Logo -->
+      <div class="auth-logo">
+        <div class="logo-text">CINEVERSE</div>
+        <div style="font-size:0.7rem;letter-spacing:4px;color:var(--text-muted);margin-top:4px;">PREMIUM CINEMA</div>
+      </div>
+
+      <h1 class="auth-title">Welcome Back</h1>
+      <p class="auth-subtitle">Sign in to access your bookings and watchlist</p>
+
+      <form id="login-form" novalidate>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <div class="input-wrapper">
+            <input type="email" id="email" class="form-control" placeholder="you@example.com" autocomplete="email">
+            <span class="input-icon">✉</span>
+          </div>
+          <span class="form-error">Please enter a valid email address</span>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="input-wrapper">
+            <input type="password" id="password" class="form-control" placeholder="Enter your password" autocomplete="current-password">
+            <span class="input-icon" id="toggle-password" title="Show/Hide">👁</span>
+          </div>
+          <span class="form-error">Password must be at least 6 characters</span>
+        </div>
+
+        <!-- Remember + Forgot -->
+        <div class="checkbox-row">
+          <label class="checkbox-label">
+            <input type="checkbox" id="remember">
+            <span class="custom-checkbox"></span>
+            Remember me
+          </label>
+          <a href="#" class="forgot-link" id="forgot-link">Forgot password?</a>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn btn-primary" style="width:100%;font-size:1rem;padding:1rem;">
+          <span>Sign In</span>
+          <span>→</span>
+        </button>
+
+        <div class="auth-divider">or continue with</div>
+
+        <!-- Social Buttons -->
+        <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem;">
+          <button type="button" class="btn btn-ghost" style="flex:1;" onclick="showToast('Social login coming soon!','info')">
+            <span>G</span> Google
+          </button>
+          <button type="button" class="btn btn-ghost" style="flex:1;" onclick="showToast('Social login coming soon!','info')">
+            <span>f</span> Facebook
+          </button>
+        </div>
+
+      </form>
+
+      <p class="auth-footer">
+        New to CineVerse? <a href="register.html" id="goto-register">Create Account</a>
+      </p>
+
+    </div>
+  </main>
+
+  <!-- Forgot Password Modal -->
+  <div class="modal-overlay" id="forgot-modal">
+    <div class="modal">
+      <div class="modal-icon" style="background:var(--cyan-dim);border-color:var(--cyan);color:var(--cyan);">🔑</div>
+      <h3>Reset Password</h3>
+      <p>Enter your email address and we'll send you a reset link within minutes.</p>
+      <div class="form-group" style="text-align:left;">
+        <label>Email Address</label>
+        <input type="email" id="reset-email" class="form-control" placeholder="you@example.com">
+      </div>
+      <div style="display:flex;gap:1rem;">
+        <button class="btn btn-outline" style="flex:1;" onclick="closeForgotModal()">Cancel</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="sendReset()">Send Link</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .film-strip {
+      position: fixed;
+      top: 0; bottom: 0;
+      width: 40px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .film-strip-left { left: 0; }
+    .film-strip-right { right: 0; }
+
+    .film-strip::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 30px,
+        rgba(255,255,255,0.06) 30px,
+        rgba(255,255,255,0.06) 32px,
+        transparent 32px,
+        transparent 50px
+      );
+    }
+
+    @media (max-width: 768px) {
+      .film-strip { display: none; }
+    }
+  </style>
+
+  <script src="script.js"></script>
+  <script>
+    // Check if already logged in
+    if (checkAuth()) {
+      window.location.href = 'index.html';
+    }
+
+    // Password toggle
+    document.getElementById('toggle-password').addEventListener('click', () => {
+      const pwd = document.getElementById('password');
+      const icon = document.getElementById('toggle-password');
+      if (pwd.type === 'password') {
+        pwd.type = 'text';
+        icon.textContent = '🙈';
+      } else {
+        pwd.type = 'password';
+        icon.textContent = '👁';
+      }
+    });
+
+    // Forgot Password
+    document.getElementById('forgot-link').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('forgot-modal').classList.add('show');
+    });
+
+    function closeForgotModal() {
+      document.getElementById('forgot-modal').classList.remove('show');
+    }
+
+    function sendReset() {
+      const email = document.getElementById('reset-email').value;
+      if (!validateEmail(email)) {
+        showToast('Please enter a valid email', 'error');
+        return;
+      }
+      closeForgotModal();
+      showToast('Password reset link sent! Check your inbox.', 'success');
+    }
+
+    document.getElementById('forgot-modal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeForgotModal();
+    });
+
+    // Navigation links
+    document.getElementById('goto-register').addEventListener('click', (e) => {
+      e.preventDefault();
+      navigateTo('register.html');
+    });
+
+    // Login Form
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      let valid = true;
+
+      const email = document.getElementById('email');
+      const password = document.getElementById('password');
+      const remember = document.getElementById('remember').checked;
+
+      // Validate email
+      if (!validateEmail(email.value)) {
+        showFieldError(email, 'Please enter a valid email address');
+        valid = false;
+      } else {
+        clearFieldError(email);
+      }
+
+      // Validate password
+      if (password.value.length < 6) {
+        showFieldError(password, 'Password must be at least 6 characters');
+        valid = false;
+      } else {
+        clearFieldError(password);
+      }
+
+      if (!valid) return;
+
+      // Check credentials
+      const users = JSON.parse(localStorage.getItem('cineverse_users') || '[]');
+      const user = users.find(u => u.email === email.value && u.password === password.value);
+
+      // For demo: accept any valid email if no users exist, or match
+      if (!user && users.length > 0) {
+        showFieldError(email, 'Invalid email or password');
+        showFieldError(password, 'Invalid email or password');
+        showToast('Invalid credentials. Try again.', 'error');
+        return;
+      }
+
+      // Store session
+      const sessionUser = user || { email: email.value, name: email.value.split('@')[0], phone: '' };
+      if (remember) {
+        localStorage.setItem('cineverse_user', JSON.stringify(sessionUser));
+      } else {
+        sessionStorage.setItem('cineverse_user', JSON.stringify(sessionUser));
+        localStorage.setItem('cineverse_user', JSON.stringify(sessionUser));
+      }
+
+      showToast('Welcome back! 🎬', 'success');
+      setTimeout(() => navigateTo('index.html'), 1000);
+    });
+
+    // Real-time validation
+    document.getElementById('email').addEventListener('blur', function() {
+      if (this.value && !validateEmail(this.value)) {
+        showFieldError(this, 'Please enter a valid email address');
+      } else if (this.value) {
+        clearFieldError(this);
+      }
+    });
+  </script>
+</body>
+</html>

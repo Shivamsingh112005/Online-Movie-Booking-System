@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CINEVERSE — Home</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+  <canvas id="particles-canvas"></canvas>
+  <div id="page-transition" class="page-transition"></div>
+
+  <div class="loading-screen">
+    <div class="loading-logo">CINEVERSE</div>
+    <div class="loading-bar"><div class="loading-progress"></div></div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar" id="navbar">
+    <a href="index.html" class="nav-logo">CINEVERSE</a>
+
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html" class="active">Home</a></li>
+      <li><a href="#trending">Movies</a></li>
+      <li><a href="#upcoming">Upcoming</a></li>
+      <li><a href="#" id="nav-wishlist">Wishlist</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <!-- Search -->
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Search movies..." autocomplete="off">
+        <div class="search-dropdown" id="search-dropdown"></div>
+      </div>
+
+      <!-- Theme Toggle -->
+      <button class="icon-btn" id="theme-toggle" title="Toggle Theme">☀️</button>
+
+      <!-- User -->
+      <button class="icon-btn" id="user-btn" title="Account">👤</button>
+
+      <!-- Hamburger -->
+      <div class="hamburger" id="hamburger">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Slider -->
+  <section class="hero" id="hero">
+    <div id="hero-slides"></div>
+
+    <!-- Controls -->
+    <button class="hero-nav hero-prev" id="hero-prev" aria-label="Previous">&#8249;</button>
+    <button class="hero-nav hero-next" id="hero-next" aria-label="Next">&#8250;</button>
+
+    <div class="hero-dots" id="hero-dots"></div>
+  </section>
+
+  <!-- Trending Movies -->
+  <section class="section" id="trending">
+    <div class="section-header reveal">
+      <h2 class="section-title">NOW PLAYING</h2>
+      <a href="#" class="section-link">View All →</a>
+    </div>
+    <div class="movies-grid" id="trending-grid"></div>
+  </section>
+
+  <!-- Upcoming Movies -->
+  <section class="section" id="upcoming" style="background:rgba(0,0,0,0.2);">
+    <div class="section-header reveal">
+      <h2 class="section-title">COMING SOON</h2>
+      <a href="#" class="section-link">See Schedule →</a>
+    </div>
+    <div class="movies-grid" id="upcoming-grid"></div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="nav-logo">CINEVERSE</div>
+        <p>Experience cinema like never before. Premium seats, stunning visuals, and unforgettable stories.</p>
+        <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+          <button class="icon-btn" onclick="showToast('Follow us!','info')">𝕏</button>
+          <button class="icon-btn" onclick="showToast('Follow us!','info')">in</button>
+          <button class="icon-btn" onclick="showToast('Follow us!','info')">▶</button>
+        </div>
+      </div>
+      <div>
+        <h4 class="footer-heading">Quick Links</h4>
+        <nav class="footer-links">
+          <a href="index.html">Home</a>
+          <a href="#">Movies</a>
+          <a href="#">Events</a>
+          <a href="#">Offers</a>
+        </nav>
+      </div>
+      <div>
+        <h4 class="footer-heading">Support</h4>
+        <nav class="footer-links">
+          <a href="#">Help Center</a>
+          <a href="#">Contact Us</a>
+          <a href="#">Refunds</a>
+          <a href="#">FAQs</a>
+        </nav>
+      </div>
+      <div>
+        <h4 class="footer-heading">Legal</h4>
+        <nav class="footer-links">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Use</a>
+          <a href="#">Cookie Policy</a>
+        </nav>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2024 CineVerse. All rights reserved.</span>
+      <span style="font-family:var(--font-mono);font-size:0.75rem;color:var(--text-muted);">Built with ❤️ for Cinema</span>
+    </div>
+  </footer>
+
+  <style>
+    .hero-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid var(--glass-border);
+      color: var(--text-primary);
+      font-size: 2rem;
+      cursor: pointer;
+      z-index: 10;
+      transition: var(--transition);
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(10px);
+    }
+    .hero-nav:hover {
+      background: rgba(240,180,41,0.2);
+      border-color: var(--gold);
+      color: var(--gold);
+      box-shadow: var(--glow-gold);
+    }
+    .hero-prev { left: 3%; }
+    .hero-next { right: 3%; }
+
+    .nav-links a.active { color: var(--gold); }
+    .nav-links a.active::after { transform: scaleX(1); }
+
+    @media (max-width: 768px) {
+      .hero-nav { width: 40px; height: 40px; font-size: 1.5rem; }
+    }
+  </style>
+
+  <script src="script.js"></script>
+  <script>
+    // Navbar scroll effect
+    window.addEventListener('scroll', () => {
+      const navbar = document.getElementById('navbar');
+      navbar.style.background = window.scrollY > 50
+        ? 'rgba(5,8,16,0.95)'
+        : 'rgba(5,8,16,0.8)';
+    });
+
+    // User btn
+    document.getElementById('user-btn').addEventListener('click', () => {
+      const user = checkAuth();
+      if (user) {
+        showToast(`Hi, ${user.name || user.email.split('@')[0]}! 👋`, 'info');
+      } else {
+        navigateTo('login.html');
+      }
+    });
+
+    // Wishlist nav
+    document.getElementById('nav-wishlist').addEventListener('click', (e) => {
+      e.preventDefault();
+      const wl = JSON.parse(localStorage.getItem('wishlist') || '[]');
+      showToast(`You have ${wl.length} movies in your wishlist`, 'info');
+    });
+
+    // Build Hero Slides
+    const heroMovies = MOVIES.slice(0, 4);
+    let currentSlide = 0;
+
+    const slidesContainer = document.getElementById('hero-slides');
+    const dotsContainer = document.getElementById('hero-dots');
+
+    heroMovies.forEach((movie, i) => {
+      const slide = document.createElement('div');
+      slide.className = `hero-slide ${i === 0 ? 'active' : ''}`;
+      slide.innerHTML = `
+        <img src="${movie.banner}" alt="${movie.title}" class="hero-bg" loading="${i === 0 ? 'eager' : 'lazy'}">
+        <div class="hero-content">
+          <div class="hero-badge">⭐ ${movie.rating} · NOW PLAYING</div>
+          <h1 class="hero-title">${movie.title}</h1>
+          <div class="hero-meta">
+            <span>🎬 ${movie.genre.join(' / ')}</span>
+            <span>⏱ ${movie.duration}</span>
+            <span>🗓 ${movie.year}</span>
+            <span>🔊 ${movie.language}</span>
+          </div>
+          <p class="hero-description">${movie.description}</p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" onclick="goToMovie(${movie.id})">
+              🎟 Book Tickets
+            </button>
+            <button class="btn btn-outline" onclick="goToMovie(${movie.id})">
+              ▶ Watch Trailer
+            </button>
+          </div>
+        </div>
+      `;
+      slidesContainer.appendChild(slide);
+
+      const dot = document.createElement('div');
+      dot.className = `hero-dot ${i === 0 ? 'active' : ''}`;
+      dot.addEventListener('click', () => goToSlide(i));
+      dotsContainer.appendChild(dot);
+    });
+
+    function goToSlide(idx) {
+      document.querySelectorAll('.hero-slide')[currentSlide].classList.remove('active');
+      document.querySelectorAll('.hero-dot')[currentSlide].classList.remove('active');
+      currentSlide = (idx + heroMovies.length) % heroMovies.length;
+      document.querySelectorAll('.hero-slide')[currentSlide].classList.add('active');
+      document.querySelectorAll('.hero-dot')[currentSlide].classList.add('active');
+    }
+
+    document.getElementById('hero-prev').addEventListener('click', () => goToSlide(currentSlide - 1));
+    document.getElementById('hero-next').addEventListener('click', () => goToSlide(currentSlide + 1));
+
+    const autoSlide = setInterval(() => goToSlide(currentSlide + 1), 5000);
+
+    // Build Movie Cards
+    function createMovieCard(movie) {
+      const card = document.createElement('div');
+      card.className = 'movie-card reveal';
+      card.innerHTML = `
+        <div class="movie-card-poster">
+          <img src="${movie.poster}" alt="${movie.title}" loading="lazy">
+          <div class="movie-card-overlay">
+            <button class="btn btn-primary" style="padding:0.6rem 1.2rem;font-size:0.8rem;" onclick="goToMovie(${movie.id})">
+              Book Now
+            </button>
+          </div>
+          <div class="movie-card-badge">⭐ ${movie.rating}</div>
+          <button class="wishlist-btn" data-id="${movie.id}" title="Add to Wishlist">♥</button>
+        </div>
+        <div class="movie-card-info">
+          <div class="movie-card-title">${movie.title}</div>
+          <div class="movie-card-meta">
+            ${movie.genre.map(g => `<span class="meta-tag genre">${g}</span>`).join('')}
+            <span class="meta-tag">⏱ ${movie.duration}</span>
+          </div>
+          <button class="btn btn-ghost" style="width:100%;padding:0.5rem;font-size:0.8rem;" onclick="goToMovie(${movie.id})">
+            View Details →
+          </button>
+        </div>
+      `;
+      card.addEventListener('click', (e) => {
+        if (!e.target.closest('.btn') && !e.target.closest('.wishlist-btn')) {
+          goToMovie(movie.id);
+        }
+      });
+      return card;
+    }
+
+    function goToMovie(id) {
+      localStorage.setItem('selectedMovie', id);
+      navigateTo('movie.html');
+    }
+
+    // Render grids
+    const trendingGrid = document.getElementById('trending-grid');
+    const upcomingGrid = document.getElementById('upcoming-grid');
+
+    MOVIES.slice(0, 4).forEach(m => trendingGrid.appendChild(createMovieCard(m)));
+    MOVIES.slice(4).forEach(m => upcomingGrid.appendChild(createMovieCard(m)));
+
+    initWishlist();
+
+    // Search
+    const searchInput = document.getElementById('search-input');
+    const searchDropdown = document.getElementById('search-dropdown');
+
+    searchInput.addEventListener('input', function() {
+      const query = this.value.toLowerCase().trim();
+      if (!query) { searchDropdown.classList.remove('show'); return; }
+
+      const results = MOVIES.filter(m =>
+        m.title.toLowerCase().includes(query) ||
+        m.genre.some(g => g.toLowerCase().includes(query))
+      );
+
+      if (results.length === 0) {
+        searchDropdown.innerHTML = '<div class="search-result-item" style="color:var(--text-muted);">No results found</div>';
+      } else {
+        searchDropdown.innerHTML = results.map(m => `
+          <div class="search-result-item" onclick="goToMovie(${m.id})">
+            <img src="${m.poster}" alt="${m.title}">
+            <div>
+              <div style="font-weight:600;font-size:0.85rem;">${m.title}</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);">${m.genre.join(' · ')} · ⭐ ${m.rating}</div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      searchDropdown.classList.add('show');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.search-bar')) {
+        searchDropdown.classList.remove('show');
+      }
+    });
+
+    // Scroll reveal init
+    setTimeout(() => initScrollReveal(), 100);
+  </script>
+</body>
+</html>

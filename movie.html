@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CINEVERSE — Movie Details</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <canvas id="particles-canvas"></canvas>
+  <div id="page-transition" class="page-transition"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-logo" onclick="event.preventDefault();navigateTo('index.html')">CINEVERSE</a>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html" onclick="event.preventDefault();navigateTo('index.html')">Home</a></li>
+      <li><a href="#">Movies</a></li>
+      <li><a href="#">Wishlist</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="icon-btn" id="theme-toggle">☀️</button>
+      <button class="icon-btn" onclick="navigateTo('index.html')" title="Back">←</button>
+      <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+    </div>
+  </nav>
+
+  <!-- Movie Hero -->
+  <section class="movie-hero" id="movie-hero">
+    <img id="hero-bg" src="" alt="" class="movie-hero-bg">
+    <div class="movie-hero-content">
+      <div class="movie-detail-wrapper">
+        <div class="movie-poster-large">
+          <img id="movie-poster" src="" alt="">
+        </div>
+        <div class="movie-detail-info">
+          <h1 class="hero-title" id="movie-title">Loading...</h1>
+          <div class="movie-stats" id="movie-stats"></div>
+          <p style="color:var(--text-secondary);max-width:560px;line-height:1.7;margin:1.5rem 0;" id="movie-desc"></p>
+          <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+            <button class="btn btn-primary" id="trailer-btn">
+              ▶ Watch Trailer
+            </button>
+            <button class="btn btn-gold" id="book-btn">
+              🎟 Book Tickets
+            </button>
+            <button class="wishlist-btn" id="detail-wishlist" style="position:static;width:auto;height:auto;border-radius:50px;padding:0.75rem 1.25rem;font-size:1rem;">♥</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Details Content -->
+  <div style="padding:4rem 5%;">
+
+    <!-- Cast -->
+    <div class="reveal" style="margin-bottom:4rem;">
+      <h2 class="section-title" style="margin-bottom:2rem;">CAST</h2>
+      <div class="cast-grid" id="cast-grid"></div>
+    </div>
+
+    <!-- Show Times -->
+    <div class="reveal" style="margin-bottom:4rem;">
+      <h2 class="section-title" style="margin-bottom:2rem;">SHOWTIMES</h2>
+      <div style="margin-bottom:1.5rem;display:flex;gap:1rem;flex-wrap:wrap;" id="date-tabs"></div>
+      <div class="showtime-grid" id="showtime-grid"></div>
+    </div>
+
+    <!-- Additional Info -->
+    <div class="reveal">
+      <h2 class="section-title" style="margin-bottom:2rem;">MORE INFO</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1.5rem;" id="info-grid"></div>
+    </div>
+
+  </div>
+
+  <!-- Trailer Modal -->
+  <div class="trailer-modal" id="trailer-modal">
+    <div class="trailer-container">
+      <div class="trailer-placeholder">
+        <div class="play-icon">▶</div>
+        <p style="font-size:0.9rem;color:var(--text-muted);">Trailer preview not available in demo mode</p>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;" id="trailer-movie-name"></p>
+      </div>
+    </div>
+    <button class="trailer-close" id="trailer-close">✕ Close</button>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    const movieId = parseInt(localStorage.getItem('selectedMovie')) || 1;
+    const movie = MOVIES.find(m => m.id === movieId) || MOVIES[0];
+
+    // Populate hero
+    document.getElementById('hero-bg').src = movie.banner;
+    document.getElementById('movie-poster').src = movie.poster;
+    document.getElementById('movie-title').textContent = movie.title;
+    document.getElementById('movie-desc').textContent = movie.description;
+    document.getElementById('trailer-movie-name').textContent = movie.title;
+
+    // Stats
+    const statsEl = document.getElementById('movie-stats');
+    const stats = [
+      { icon: '⭐', label: movie.rating + '/10', cls: 'rating-pill' },
+      { icon: '⏱', label: movie.duration },
+      { icon: '🎬', label: movie.genre.join(' / ') },
+      { icon: '🗓', label: movie.year },
+      { icon: '🔊', label: movie.language }
+    ];
+    stats.forEach(s => {
+      const pill = document.createElement('div');
+      pill.className = `stat-pill ${s.cls || ''}`;
+      pill.innerHTML = `${s.icon} ${s.label}`;
+      statsEl.appendChild(pill);
+    });
+
+    // Cast
+    const castGrid = document.getElementById('cast-grid');
+    movie.cast.forEach(member => {
+      castGrid.innerHTML += `
+        <div class="cast-card">
+          <img src="${member.avatar}" alt="${member.name}" class="cast-avatar">
+          <div class="cast-name">${member.name}</div>
+          <div class="cast-role">${member.role}</div>
+        </div>
+      `;
+    });
+
+    // Date tabs
+    const dates = ['Today', 'Tomorrow', '+2 Days', '+3 Days', '+4 Days'];
+    const dateTabs = document.getElementById('date-tabs');
+    let activeDate = 0;
+
+    dates.forEach((d, i) => {
+      const btn = document.createElement('button');
+      btn.className = `btn ${i === 0 ? 'btn-gold' : 'btn-ghost'}`;
+      btn.style.padding = '0.5rem 1.25rem';
+      btn.style.fontSize = '0.85rem';
+      btn.textContent = d;
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#date-tabs .btn').forEach((b, j) => {
+          b.className = `btn ${j === i ? 'btn-gold' : 'btn-ghost'}`;
+        });
+        activeDate = i;
+      });
+      dateTabs.appendChild(btn);
+    });
+
+    // Showtimes
+    const showtimeGrid = document.getElementById('showtime-grid');
+    movie.showtimes.forEach(show => {
+      const card = document.createElement('div');
+      card.className = 'showtime-card';
+      card.innerHTML = `
+        <div class="showtime-time">${show.time}</div>
+        <div class="showtime-type">${show.type}</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">${show.available} seats left</div>
+      `;
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.showtime-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        localStorage.setItem('selectedShowtime', JSON.stringify(show));
+        showToast(`${show.time} ${show.type} selected`, 'success');
+      });
+      showtimeGrid.appendChild(card);
+    });
+
+    // Info Grid
+    const infoGrid = document.getElementById('info-grid');
+    const infos = [
+      { label: 'Language', value: movie.language },
+      { label: 'Duration', value: movie.duration },
+      { label: 'Release Year', value: movie.year },
+      { label: 'Genre', value: movie.genre.join(', ') },
+      { label: 'Rating', value: `⭐ ${movie.rating}/10` },
+      { label: 'Format', value: 'IMAX · 3D · 2D · 4DX' }
+    ];
+
+    infos.forEach(info => {
+      infoGrid.innerHTML += `
+        <div class="glass-card" style="padding:1.25rem;">
+          <div style="font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem;">${info.label}</div>
+          <div style="font-weight:600;">${info.value}</div>
+        </div>
+      `;
+    });
+
+    // Book button
+    document.getElementById('book-btn').addEventListener('click', () => {
+      const show = JSON.parse(localStorage.getItem('selectedShowtime') || 'null');
+      if (!show) {
+        showToast('Please select a showtime first', 'error');
+        document.getElementById('showtime-grid').scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+      navigateTo('booking.html');
+    });
+
+    // Trailer
+    document.getElementById('trailer-btn').addEventListener('click', () => {
+      document.getElementById('trailer-modal').classList.add('show');
+    });
+
+    document.getElementById('trailer-close').addEventListener('click', () => {
+      document.getElementById('trailer-modal').classList.remove('show');
+    });
+
+    document.getElementById('trailer-modal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        document.getElementById('trailer-modal').classList.remove('show');
+      }
+    });
+
+    // Wishlist
+    let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+    const wlBtn = document.getElementById('detail-wishlist');
+
+    function updateWishlistBtn() {
+      if (wishlist.includes(movie.id)) {
+        wlBtn.style.background = 'rgba(230,57,70,0.2)';
+        wlBtn.style.borderColor = 'var(--crimson)';
+        wlBtn.style.color = 'var(--crimson)';
+      } else {
+        wlBtn.style.background = 'var(--glass)';
+        wlBtn.style.borderColor = 'var(--glass-border)';
+        wlBtn.style.color = 'var(--text-secondary)';
+      }
+    }
+
+    updateWishlistBtn();
+
+    wlBtn.addEventListener('click', () => {
+      if (wishlist.includes(movie.id)) {
+        wishlist = wishlist.filter(x => x !== movie.id);
+        showToast('Removed from wishlist', 'info');
+      } else {
+        wishlist.push(movie.id);
+        showToast('Added to wishlist! ❤️', 'success');
+      }
+      localStorage.setItem('wishlist', JSON.stringify(wishlist));
+      updateWishlistBtn();
+    });
+
+    setTimeout(initScrollReveal, 100);
+  </script>
+</body>
+</html>

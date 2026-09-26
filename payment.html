@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CINEVERSE — Payment</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="bg-orb bg-orb-2" style="opacity:0.1;"></div>
+  <canvas id="particles-canvas"></canvas>
+  <div id="page-transition" class="page-transition"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-logo" onclick="event.preventDefault();navigateTo('index.html')">CINEVERSE</a>
+    <div class="nav-actions">
+      <button class="icon-btn" id="theme-toggle">☀️</button>
+      <button class="icon-btn" onclick="history.back()" title="Back">←</button>
+    </div>
+  </nav>
+
+  <div class="payment-page">
+
+    <!-- Payment Form -->
+    <div class="payment-form-card" style="animation:fadeSlideUp 0.6s ease;">
+
+      <!-- Header -->
+      <h1 class="payment-title">SECURE CHECKOUT</h1>
+      <p class="payment-subtitle">Your payment is protected with 256-bit SSL encryption</p>
+
+      <div class="secure-badge">
+        <div class="dot"></div>
+        <span>Secure Connection · SSL Encrypted</span>
+      </div>
+
+      <!-- Payment Methods -->
+      <div class="payment-methods" id="payment-methods">
+        <button class="payment-method active" data-method="card" onclick="switchMethod('card',this)">💳 Card</button>
+        <button class="payment-method" data-method="upi" onclick="switchMethod('upi',this)">📱 UPI</button>
+        <button class="payment-method" data-method="wallet" onclick="switchMethod('wallet',this)">👛 Wallet</button>
+        <button class="payment-method" data-method="netbanking" onclick="switchMethod('netbanking',this)">🏦 Net Banking</button>
+      </div>
+
+      <!-- Card Method -->
+      <div id="card-form">
+        <!-- Card Preview -->
+        <div class="card-preview">
+          <div class="card-chip"></div>
+          <div class="card-number-display" id="card-number-display">•••• •••• •••• ••••</div>
+          <div class="card-preview-bottom">
+            <div>
+              <div class="card-label">Card Holder</div>
+              <div class="card-value" id="card-holder-display">YOUR NAME</div>
+            </div>
+            <div>
+              <div class="card-label">Expires</div>
+              <div class="card-value" id="card-expiry-display">MM/YY</div>
+            </div>
+            <div class="card-network" id="card-network">VISA</div>
+          </div>
+        </div>
+
+        <form id="payment-form" novalidate>
+
+          <div class="form-group">
+            <label>Card Number</label>
+            <div class="input-wrapper">
+              <input type="text" id="card-number" class="form-control" placeholder="1234 5678 9012 3456" maxlength="19">
+              <span class="input-icon" id="card-type-icon">💳</span>
+            </div>
+            <span class="form-error">Please enter a valid 16-digit card number</span>
+          </div>
+
+          <div class="form-group">
+            <label>Card Holder Name</label>
+            <input type="text" id="card-holder" class="form-control" placeholder="Name as on card" autocomplete="cc-name">
+            <span class="form-error">Please enter the cardholder name</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div class="form-group">
+              <label>Expiry Date</label>
+              <input type="text" id="card-expiry" class="form-control" placeholder="MM/YY" maxlength="5">
+              <span class="form-error">Invalid date</span>
+            </div>
+            <div class="form-group">
+              <label>CVV</label>
+              <div class="input-wrapper">
+                <input type="password" id="card-cvv" class="form-control" placeholder="•••" maxlength="4">
+                <span class="input-icon" title="3 digits on back of card" style="cursor:help;">?</span>
+              </div>
+              <span class="form-error">Invalid CVV</span>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width:100%;padding:1.1rem;font-size:1rem;margin-top:0.5rem;" id="pay-btn">
+            <span>🔒</span>
+            <span>Pay <span id="pay-amount">₹0</span></span>
+          </button>
+
+        </form>
+      </div>
+
+      <!-- UPI Method -->
+      <div id="upi-form" style="display:none;">
+        <div class="form-group">
+          <label>UPI ID</label>
+          <div class="input-wrapper">
+            <input type="text" id="upi-id" class="form-control" placeholder="yourname@upi">
+            <span class="input-icon">@</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+          <button class="btn btn-ghost" style="flex:1;" onclick="selectUpiApp('GPay')">Google Pay</button>
+          <button class="btn btn-ghost" style="flex:1;" onclick="selectUpiApp('PhonePe')">PhonePe</button>
+          <button class="btn btn-ghost" style="flex:1;" onclick="selectUpiApp('Paytm')">Paytm</button>
+        </div>
+        <button class="btn btn-primary" style="width:100%;padding:1.1rem;font-size:1rem;" onclick="processPayment()">
+          🔒 Pay via UPI · <span class="pay-amt"></span>
+        </button>
+      </div>
+
+      <!-- Wallet Method -->
+      <div id="wallet-form" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+          <button class="btn btn-ghost" style="padding:1rem;" onclick="selectWallet('Paytm Wallet')">Paytm</button>
+          <button class="btn btn-ghost" style="padding:1rem;" onclick="selectWallet('Amazon Pay')">Amazon Pay</button>
+          <button class="btn btn-ghost" style="padding:1rem;" onclick="selectWallet('Freecharge')">Freecharge</button>
+          <button class="btn btn-ghost" style="padding:1rem;" onclick="selectWallet('MobiKwik')">MobiKwik</button>
+        </div>
+        <button class="btn btn-primary" style="width:100%;padding:1.1rem;font-size:1rem;" onclick="processPayment()">
+          🔒 Pay via Wallet
+        </button>
+      </div>
+
+      <!-- Net Banking -->
+      <div id="netbanking-form" style="display:none;">
+        <div class="form-group">
+          <label>Select Your Bank</label>
+          <select class="form-control" id="bank-select">
+            <option>State Bank of India</option>
+            <option>HDFC Bank</option>
+            <option>ICICI Bank</option>
+            <option>Axis Bank</option>
+            <option>Kotak Mahindra Bank</option>
+            <option>Punjab National Bank</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" style="width:100%;padding:1.1rem;font-size:1rem;" onclick="processPayment()">
+          🔒 Proceed to Bank
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Order Summary -->
+    <div style="width:340px;flex-shrink:0;">
+      <div class="booking-summary" style="position:sticky;top:90px;">
+        <h2 class="summary-title">ORDER SUMMARY</h2>
+        <div id="order-summary-content"></div>
+
+        <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--glass-border);">
+          <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;color:#2ecc71;margin-bottom:0.5rem;">
+            <span>✓</span> Free cancellation before 2 hours of show
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;color:var(--cyan);">
+            <span>✓</span> Instant booking confirmation via email
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Processing Overlay -->
+  <div class="modal-overlay" id="processing-overlay">
+    <div class="modal">
+      <div style="width:60px;height:60px;margin:0 auto 1.5rem;border:3px solid var(--glass-border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+      <h3>Processing Payment</h3>
+      <p>Please wait while we securely process your transaction...</p>
+    </div>
+  </div>
+
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 1024px) {
+      .payment-page { flex-direction: column; align-items: center; }
+      .payment-page > div:last-child { width: 100%; max-width: 550px; }
+    }
+  </style>
+
+  <script src="script.js"></script>
+  <script>
+    const bookingData = JSON.parse(localStorage.getItem('bookingData') || 'null');
+    const movie = bookingData ? (MOVIES.find(m => m.id === bookingData.movieId) || MOVIES[0]) : MOVIES[0];
+
+    // Pay amount
+    const totalAmt = bookingData ? bookingData.total : 0;
+    document.getElementById('pay-amount').textContent = `₹${totalAmt}`;
+    document.querySelectorAll('.pay-amt').forEach(el => el.textContent = `₹${totalAmt}`);
+
+    // Order summary
+    if (bookingData) {
+      const summaryEl = document.getElementById('order-summary-content');
+      summaryEl.innerHTML = `
+        <div class="summary-movie">
+          <img src="${movie.poster}" alt="${movie.title}" style="width:60px;border-radius:8px;">
+          <div class="summary-movie-info">
+            <div class="movie-title">${movie.title}</div>
+            <div class="movie-meta">${bookingData.showtime.time} · ${bookingData.showtime.type}</div>
+            <div class="movie-meta">Seats: ${bookingData.seats.join(', ')}</div>
+          </div>
+        </div>
+        <div class="summary-row">
+          <span style="color:var(--text-muted);">Subtotal</span>
+          <span class="summary-value">₹${bookingData.subtotal}</span>
+        </div>
+        <div class="summary-row">
+          <span style="color:var(--text-muted);">Convenience Fee</span>
+          <span class="summary-value">₹${bookingData.convFee}</span>
+        </div>
+        <div class="summary-row">
+          <span style="color:var(--text-muted);">GST (18%)</span>
+          <span class="summary-value">₹${bookingData.tax}</span>
+        </div>
+        <div class="summary-row total">
+          <span>Total</span>
+          <span class="summary-total">₹${bookingData.total}</span>
+        </div>
+      `;
+    }
+
+    // Switch payment method
+    function switchMethod(method, btn) {
+      document.querySelectorAll('.payment-method').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      ['card','upi','wallet','netbanking'].forEach(m => {
+        document.getElementById(m+'-form').style.display = m === method ? 'block' : 'none';
+      });
+    }
+
+    function selectUpiApp(app) { showToast(`${app} selected`, 'info'); }
+    function selectWallet(wallet) { showToast(`${wallet} selected`, 'info'); }
+
+    // Card number formatting
+    document.getElementById('card-number').addEventListener('input', function() {
+      let val = this.value.replace(/\D/g,'').substring(0,16);
+      this.value = val.replace(/(.{4})/g,'$1 ').trim();
+      document.getElementById('card-number-display').textContent =
+        val.padEnd(16,'•').replace(/(.{4})/g,'$1 ').trim().replace(/[0-9]/g, (c, i) => i < 12 ? '•' : c);
+
+      // Detect card type
+      const icon = document.getElementById('card-type-icon');
+      const netEl = document.getElementById('card-network');
+      if (val.startsWith('4')) { icon.textContent = '💳'; netEl.textContent = 'VISA'; }
+      else if (val.startsWith('5')) { icon.textContent = '💳'; netEl.textContent = 'MC'; }
+      else if (val.startsWith('3')) { icon.textContent = '💳'; netEl.textContent = 'AMEX'; }
+      else { icon.textContent = '💳'; netEl.textContent = 'VISA'; }
+    });
+
+    document.getElementById('card-holder').addEventListener('input', function() {
+      document.getElementById('card-holder-display').textContent = this.value.toUpperCase() || 'YOUR NAME';
+    });
+
+    document.getElementById('card-expiry').addEventListener('input', function() {
+      let val = this.value.replace(/\D/g,'');
+      if (val.length >= 2) val = val.substring(0,2) + '/' + val.substring(2,4);
+      this.value = val;
+      document.getElementById('card-expiry-display').textContent = this.value || 'MM/YY';
+    });
+
+    // Form submit
+    document.getElementById('payment-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      let valid = true;
+
+      const cardNum = document.getElementById('card-number');
+      const holder = document.getElementById('card-holder');
+      const expiry = document.getElementById('card-expiry');
+      const cvv = document.getElementById('card-cvv');
+
+      if (cardNum.value.replace(/\s/g,'').length !== 16) {
+        showFieldError(cardNum, 'Please enter a valid 16-digit card number');
+        valid = false;
+      } else { clearFieldError(cardNum); }
+
+      if (holder.value.trim().length < 2) {
+        showFieldError(holder, 'Please enter the cardholder name');
+        valid = false;
+      } else { clearFieldError(holder); }
+
+      if (!/^\d{2}\/\d{2}$/.test(expiry.value)) {
+        showFieldError(expiry, 'Enter expiry as MM/YY');
+        valid = false;
+      } else { clearFieldError(expiry); }
+
+      if (cvv.value.length < 3) {
+        showFieldError(cvv, 'Enter valid CVV');
+        valid = false;
+      } else { clearFieldError(cvv); }
+
+      if (!valid) return;
+      processPayment();
+    });
+
+    function processPayment() {
+      document.getElementById('processing-overlay').classList.add('show');
+      setTimeout(() => {
+        document.getElementById('processing-overlay').classList.remove('show');
+        // Save confirmation data
+        const confirmData = {
+          bookingId: generateBookingId(),
+          movie: movie.title,
+          poster: movie.poster,
+          seats: bookingData ? bookingData.seats : ['A1','A2'],
+          showtime: bookingData ? bookingData.showtime : movie.showtimes[0],
+          total: totalAmt,
+          date: new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' }),
+          time: new Date().toLocaleTimeString()
+        };
+        localStorage.setItem('confirmationData', JSON.stringify(confirmData));
+        navigateTo('confirmation.html');
+      }, 2500);
+    }
+  </script>
+</body>
+</html>
